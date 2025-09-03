@@ -60,7 +60,7 @@ Follow these steps to setup and run OrbitTasks locally:
 git clone https://github.com/devopse2e/OrbitTasks-V1.git
 
 # 2️⃣ Navigate into the project directory and then to backend folder
-cd orbittasks
+cd OrbitTasks-V1
 cd backend
 
 # 3️⃣ Install dependencies
@@ -74,19 +74,25 @@ npm run dev
 
 ### frontend Commands in another terminal:
 ```bash
-# 1️⃣ Open fresh terminal and change to orbitasks/frontend folder
+# 1️⃣ Open fresh terminal and change to frontend folder
+cd OrbitTasks-V1
 cd frontend
 
 # 2️⃣ Install dependencies
 npm install
 
-# 3️⃣ Start the backend
+# 3️⃣ Start the frontend
 npm run build
 npm start
 ```
 
 ***
 In you local environment/laptop update /etc/hosts with below
+``` bash
+vi /etc/hosts
+
+```
+add this line 
 
 127.0.0.1 orbittasks
 
