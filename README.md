@@ -47,6 +47,10 @@ OrbitTasks follows a clean **frontend–backend** separation with a modern React
 
 ***
 
+The app can also be accessed from  **https://orbittasks.vercel.app** and **https://orbit-tasks.netlify.app**
+
+***
+
 ## 🚀 Installation & Commands
 
 Follow these steps to setup and run OrbitTasks locally:
@@ -88,3 +92,5 @@ In you local environment/laptop update /etc/hosts with below
 
 
 The app will start on **http://orbittasks** and support **hot module reloading** for instant feedback.
+
+
