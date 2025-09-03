@@ -53,7 +53,7 @@ Follow these steps to setup and run OrbitTasks locally:
 
 ```bash
 # 1️⃣ Clone the repository
-git clone https://github.com/devopse2e/OrbitTasks-V2.git
+git clone https://github.com/devopse2e/OrbitTasks-V1.git
 
 # 2️⃣ Navigate into the project directory and then to backend folder
 cd orbittasks
