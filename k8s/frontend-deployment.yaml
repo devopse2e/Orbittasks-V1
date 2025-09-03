@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  namespace: todo-app  # e.g., todo-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: devopse2e/todo-app-frontend:latest  # e.g., yourusername/todo-app-frontend:latest
+          env:
+            - name: REACT_APP_API_URL
+              value: "http://backend-service.todo-app.svc.cluster.local:3001"  # Internal K8s DNS; adjust if needed
+          ports:
+            - containerPort: 80
+          envFrom:
+            - configMapRef:
+                name: todo-app-config  # Your existing ConfigMap for app env vars (unchanged)
+          volumeMounts:  # New: Mount nginx config
+            - name: nginx-config-volume
+              mountPath: /etc/nginx/conf.d  # Overrides default nginx config directory
+          readinessProbe:
+            httpGet:
+              path: /bundle.js  # Or /bundle.js to check asset serving
+              port: 80
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 5
+      volumes:  # New: Define the volume from the nginx ConfigMap
+        - name: nginx-config-volume
+          configMap:
+            name: nginx-config  # References the new ConfigMap
+

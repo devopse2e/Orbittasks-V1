@@ -1,0 +1,43 @@
+// src/hooks/useTodos.js - Minimal version for testing
+import { useState, useEffect } from 'react';
+
+export const useTodos = () => {
+  const [todos, setTodos] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  console.log('useTodos hook called'); // Debug line
+
+  const addTodo = async (text) => {
+    const newTodo = { id: Date.now(), text, completed: false };
+    setTodos(prev => [...prev, newTodo]);
+  };
+
+  const toggleTodo = async (id) => {
+    setTodos(prev => 
+      prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t)
+    );
+  };
+
+  const editTodo = async (id, text) => {
+    setTodos(prev => 
+      prev.map(t => t.id === id ? { ...t, text } : t)
+    );
+  };
+
+  const deleteTodo = async (id) => {
+    setTodos(prev => prev.filter(t => t.id !== id));
+  };
+
+  return {
+    todos,
+    loading,
+    error,
+    addTodo,
+    toggleTodo,
+    editTodo,
+    deleteTodo,
+    refetchTodos: () => {}
+  };
+};
+

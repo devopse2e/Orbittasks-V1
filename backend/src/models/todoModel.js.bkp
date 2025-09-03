@@ -1,0 +1,53 @@
+// In-memory storage for simplicity
+let todos = [];
+let nextId = 1;
+
+const getAll = () => {
+  return Promise.resolve(todos);
+};
+
+const create = (text) => {
+  const todo = {
+    id: nextId++,
+    text,
+    completed: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  todos.push(todo);
+  return Promise.resolve(todo);
+};
+
+const update = (id, updates) => {
+  const todoIndex = todos.findIndex(t => t.id === parseInt(id));
+  if (todoIndex === -1) {
+    return Promise.resolve(null);
+  }
+  
+  const updatedTodo = {
+    ...todos[todoIndex],
+    ...updates,
+    updatedAt: new Date().toISOString()
+  };
+  
+  todos[todoIndex] = updatedTodo;
+  return Promise.resolve(updatedTodo);
+};
+
+const deleteById = (id) => {
+  const todoIndex = todos.findIndex(t => t.id === parseInt(id));
+  if (todoIndex === -1) {
+    return Promise.resolve(false);
+  }
+  
+  todos.splice(todoIndex, 1);
+  return Promise.resolve(true);
+};
+
+module.exports = {
+  getAll,
+  create,
+  update,
+  delete: deleteById
+};
+

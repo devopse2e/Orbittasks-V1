@@ -1,0 +1,189 @@
+// src/hooks/useTodos.js - Safe version with fallbacks
+import { useState, useEffect } from 'react';
+
+export const useTodos = () => {
+  const [todos, setTodos] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  console.log('useTodos hook called'); // Debug line
+  console.log('Current todos state:', todos); // Debug line
+
+  // Simple API test function
+  const testBackendConnection = async () => {
+    try {
+      console.log('Testing backend connection...');
+      const response = await fetch('http://localhost:3001/health');
+      const data = await response.json();
+      console.log('Backend health check:', data);
+      return true;
+    } catch (error) {
+      console.error('Backend connection failed:', error);
+      return false;
+    }
+  };
+
+  // Load todos with fallback
+  const loadTodos = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Test backend connection first
+      const backendAvailable = await testBackendConnection();
+      
+      if (backendAvailable) {
+        console.log('Backend available, loading todos...');
+        const response = await fetch('http://localhost:3001/api/todos');
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Todos loaded from backend:', data);
+          setTodos(data);
+        } else {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+      } else {
+        console.log('Backend not available, using local storage fallback');
+        // Fallback to local storage or empty array
+        const savedTodos = localStorage.getItem('todos');
+        setTodos(savedTodos ? JSON.parse(savedTodos) : []);
+      }
+    } catch (err) {
+      console.error('Load todos error:', err);
+      setError(`Failed to load todos: ${err.message}`);
+      // Fallback to empty array to prevent white page
+      setTodos([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add todo with fallback
+  const addTodo = async (text) => {
+    try {
+      setError(null);
+      console.log('Adding todo:', text);
+      
+      // Try backend first
+      const backendAvailable = await testBackendConnection();
+      
+      if (backendAvailable) {
+        const response = await fetch('http://localhost:3001/api/todos', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ text }),
+        });
+        
+        if (response.ok) {
+          const newTodo = await response.json();
+          console.log('Todo added via backend:', newTodo);
+          setTodos(prev => [...prev, newTodo]);
+        } else {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+      } else {
+        // Fallback to local state
+        console.log('Backend not available, adding todo locally');
+        const newTodo = { id: Date.now(), text, completed: false };
+        setTodos(prev => [...prev, newTodo]);
+        localStorage.setItem('todos', JSON.stringify([...todos, newTodo]));
+      }
+    } catch (err) {
+      console.error('Add todo error:', err);
+      setError(`Failed to add todo: ${err.message}`);
+    }
+  };
+
+  // Toggle todo with fallback
+  const toggleTodo = async (id) => {
+    try {
+      setError(null);
+      console.log('Toggling todo:', id);
+      
+      const todo = todos.find(t => t.id === id);
+      if (!todo) return;
+
+      const backendAvailable = await testBackendConnection();
+      
+      if (backendAvailable) {
+        const response = await fetch(`http://localhost:3001/api/todos/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ completed: !todo.completed }),
+        });
+        
+        if (response.ok) {
+          const updatedTodo = await response.json();
+          console.log('Todo toggled via backend:', updatedTodo);
+          setTodos(prev => prev.map(t => t.id === id ? updatedTodo : t));
+        } else {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+      } else {
+        // Fallback to local state
+        console.log('Backend not available, toggling todo locally');
+        const updatedTodos = todos.map(t => 
+          t.id === id ? { ...t, completed: !t.completed } : t
+        );
+        setTodos(updatedTodos);
+        localStorage.setItem('todos', JSON.stringify(updatedTodos));
+      }
+    } catch (err) {
+      console.error('Toggle todo error:', err);
+      setError(`Failed to toggle todo: ${err.message}`);
+    }
+  };
+
+  // Delete todo with fallback
+  const deleteTodo = async (id) => {
+    try {
+      setError(null);
+      console.log('Deleting todo:', id);
+      
+      const backendAvailable = await testBackendConnection();
+      
+      if (backendAvailable) {
+        const response = await fetch(`http://localhost:3001/api/todos/${id}`, {
+          method: 'DELETE',
+        });
+        
+        if (response.ok) {
+          console.log('Todo deleted via backend:', id);
+          setTodos(prev => prev.filter(t => t.id !== id));
+        } else {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+      } else {
+        // Fallback to local state
+        console.log('Backend not available, deleting todo locally');
+        const updatedTodos = todos.filter(t => t.id !== id);
+        setTodos(updatedTodos);
+        localStorage.setItem('todos', JSON.stringify(updatedTodos));
+      }
+    } catch (err) {
+      console.error('Delete todo error:', err);
+      setError(`Failed to delete todo: ${err.message}`);
+    }
+  };
+
+  // Load todos on mount
+  useEffect(() => {
+    console.log('useEffect triggered - loading todos');
+    loadTodos();
+  }, []);
+
+  return {
+    todos,
+    loading,
+    error,
+    addTodo,
+    toggleTodo,
+    deleteTodo,
+    refetchTodos: loadTodos
+  };
+};
+

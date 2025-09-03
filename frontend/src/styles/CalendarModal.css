@@ -1,0 +1,526 @@
+/* frontend/src/styles/CalendarModal.css */
+
+/* Theme variables usage for colors where applicable */
+
+/* Backdrop */
+.calendar-right {
+  /* push down so its top aligns with the “Active Tasks” card         */
+  top: 176px;                      /* tune if your header height differs */
+  right: 24px;                     /* gap from browser edge              */
+  position: fixed;
+  z-index: 2000;
+
+  /* enough space for full 6-row month grid + header                   */
+  width: 480px;                    /* increase / reduce as desired      */
+  height: 480px;                   /* roughly matches task card height  */
+  background: var(--card-bg, #1a202c);
+  border-radius: 20px 0 0 20px;
+  box-shadow: -4px 0 18px rgba(0,0,0,0.45);
+  padding: 18px 22px;
+  box-sizing: border-box;
+
+  display: flex;                   /* allow inner flex children */
+  flex-direction: column;
+}
+/* Modal card */
+.calendar-modal {
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;                /* no scroll except grid if needed */
+}
+
+/* ▼ 3. HEADER: CLUSTERED ARROWS + TITLE, CLOSE TO FAR RIGHT */
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-color, #2d3748);
+  padding-bottom: 6px;
+}
+
+
+.nav-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;                        /* tight spacing between arrow & title */
+  margin: 0 auto;                  /* center cluster in header */
+}
+
+.calendar-header h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--primary-color, #a78bfa);
+  margin: 0;                       /* remove default margin */
+}
+
+.nav-button {
+  font-size: 1.2rem;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 8px;
+  background: var(--input-bg-color, #374151);
+  color: var(--text-color, #e2e8f0);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.nav-button:hover { background: var(--dropdown-hover-bg, #4a5568); }
+
+/* close (X) stays at far right */
+.close-btn {
+  font-size: 1.4rem;
+  padding: 4px 8px;
+  background: none;
+  border: none;
+  color: var(--primary-color, #a78bfa);
+  cursor: pointer;
+  transition: transform 0.25s, color 0.25s;
+}
+.close-btn:hover { transform: rotate(90deg); color: #8b6dff; }
+
+/* Calendar grid */
+.calendar-grid {
+  flex: 1;                         /* consume remaining height */
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 1fr;             /* uniform square-ish cells */
+  gap: 8px;
+  padding-top: 10px;
+  overflow-y: auto;                /* only scroll in very small viewports */
+}
+
+/* weekday header cells */
+.calendar-weekday {
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--muted-text, #a0aec0);
+  padding: 6px 0;
+  border-bottom: 2px solid var(--border-color, #374151);
+}
+
+/* day cells */
+.calendar-day {
+  min-height: 52px;
+  background: var(--dropdown-bg, #2d3748);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  transition: min-height 0.25s, background 0.2s;
+  overflow: hidden;
+  scroll-behavior: smooth;
+}
+
+.calendar-day:hover:not(.empty) { background: #3b4557; transform: translateY(-2px); }
+.calendar-day.has-tasks {
+  min-height: 80px;         /* Increase height so all details fit */
+  padding-bottom: 8px;       /* Extra space at the bottom */
+  align-items: stretch;    /* Align content to start for room */
+  overflow: visible;
+  max-width: 82px;
+}
+
+/* empty placeholders before 1st of month */
+.calendar-day.empty {
+  background: transparent;
+  border: 1px dashed var(--border-color, #374151);
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+.day-number {
+  padding: 6px 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  background: var(--input-bg-color, #374151);
+  color: var(--text-color, #e2e8f0);
+  border-bottom: 1px solid var(--border-color, #374151);
+}
+
+.calendar-day.today .day-number {
+  background: var(--primary-color, #6366f1);
+  color: #fff;
+  border-radius: 10px 10px 0 0;
+}
+
+.tasks-list {
+    padding: 8px 12px;
+    overflow-y: auto;
+    flex-grow: 1;
+    max-height: 70px;
+    gap: 6px;
+}
+
+.task-item {
+    margin-bottom: 5px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid rgba(74, 85, 104, 0.5);
+    font-size: 0.85em;
+}
+
+.task-item:last-child {
+    border-bottom: none;
+}
+
+.task-title {
+    font-weight: 600;
+    color: var(--text-color, #e0e7ff);
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;    /* break long words if needed */
+    max-height: 3.6em;         /* up to ~3 lines */
+}
+
+.task-date {
+    font-size: 0.75em;
+    color: var(--muted-text, #a0aec0);
+}
+
+.task-date.due {
+    color: #fc8181;
+    font-weight: 500;
+}
+
+.task-date.created {
+    color: #63b3ed;
+    font-weight: 500;
+}
+
+.show-more-btn {
+  background-color: var(--primary-color, #6366f1);
+  color: white;
+  border-radius: 8px;
+  font-size: 0.70rem;
+  padding: 6px 10px;
+  margin-top: 8px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(99,102,241,0.13);
+  cursor: pointer;
+  transition: background 0.18s ease-in-out;
+  display: inline-block;
+  white-space: nowrap;
+  width: auto;
+  overflow: visible;
+}
+.show-more-btn:hover {
+  background-color: #4f46e5;
+}
+
+
+/* DailyTasksModal (Show More Pop-up) Styles */
+.daily-tasks-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2001;
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+.daily-tasks-modal {
+    background-color: var(--bg-color, #111827);
+    border-radius: 20px;
+    width: 90vw;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    color: var(--text-color, #e2e8f0);
+    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.6);
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.daily-tasks-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color, #374151);
+}
+
+.daily-tasks-header h2 {
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: var(--primary-color, #9f7aea);
+    margin: 0;
+}
+
+.daily-tasks-list {
+    flex-grow: 1;
+    padding-right: 10px;
+}
+
+.task-detail-item {
+    background-color: var(--card-bg, #1f2937);
+    border: 1px solid var(--border-color, #374151);
+    border-radius: 12px;
+    padding: 15px 20px;
+    margin-bottom: 15px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+}
+
+.task-detail-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.task-detail-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.task-detail-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-color, #e0e7ff);
+}
+
+.task-detail-priority-pill, .task-detail-category-pill {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 500;
+    color: #fff;
+}
+.task-detail-priority-pill.priority-High { background-color: #ef4444; }
+.task-detail-priority-pill.priority-Medium { background-color: #f97316; }
+.task-detail-priority-pill.priority-Low { background-color: #22c55e; }
+.task-detail-category-pill { background-color: #6b7280; }
+
+.task-detail-notes-wrapper {
+    margin-bottom: 10px;
+}
+
+.task-detail-notes {
+    font-size: 0.9em;
+    color: var(--text-muted, #a0aec0);
+    line-height: 1.4;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    text-overflow: ellipsis;
+    margin-bottom: 10px;
+}
+
+.view-details-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-top: 5px;
+}
+
+.view-details-btn:hover {
+    background-color: #635cff;
+}
+
+.task-detail-dates {
+    font-size: 0.85em;
+    color: var(--text-muted, #cbd5e0);
+    margin-bottom: 8px;
+    display: flex;
+    gap: 15px;
+}
+
+.task-detail-date.created {
+    color: #63b3ed;
+}
+.task-detail-date.due {
+    color: #fc8181;
+}
+
+.task-detail-meta {
+    font-size: 0.8em;
+    color: var(--text-muted, #a0aec0);
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(74, 85, 104, 0.3);
+}
+
+.empty-state {
+    text-align: center;
+    color: var(--text-muted, #a0aec0);
+    padding: 20px;
+    font-style: italic;
+}
+
+/* TaskDetailViewer (Full Task Pop-up) Styles */
+.task-viewer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2002;
+    padding: 20px;
+    opacity: 0;
+    animation: fadeIn 0.3s ease-in-out forwards;
+}
+.task-viewer-overlay.fade-out {
+    opacity: 0;
+    transition: opacity 0.3s ease-out;
+}
+
+.task-viewer-card {
+    background: var(--card-bg, #1f2937);
+    color: var(--text-color, #e5e7eb);
+    border: 1px solid var(--border-color, #4b5563);
+    border-radius: 15px;
+    padding: 25px 30px;
+    max-width: 550px;
+    width: 90%;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.25);
+    position: relative;
+    transform: scale(0.95);
+    opacity: 0;
+    animation: popupIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.task-viewer-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 30px;
+    height: 30px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    color: var(--text-muted, #9ca3af);
+    font-size: 1.5rem;
+    font-weight: 300;
+    line-height: 28px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.task-viewer-close:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: var(--text-color, #fff);
+    transform: rotate(90deg);
+}
+
+.task-viewer-name {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: var(--primary-color, #a78bfa);
+}
+
+.task-viewer-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color, #374151);
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-label {
+    font-size: 0.85rem;
+    color: var(--text-muted, #9ca3af);
+    margin-bottom: 4px;
+}
+
+.detail-value {
+    font-size: 0.95rem;
+    color: var(--text-color, #e5e7eb);
+    font-weight: 500;
+}
+.detail-value.priority-High { color: #ef4444; }
+.detail-value.priority-Medium { color: #f97316; }
+.detail-value.priority-Low { color: #22c55e; }
+
+.task-viewer-notes {
+    font-size: 1rem;
+    color: var(--text-muted, #d1d5db);
+    padding: 12px;
+    border: 1px solid var(--border-color, #4b5563);
+    border-radius: 8px;
+    background: var(--bg-color, #111827);
+    min-height: 80px;
+    max-height: 250px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    text-align: left;
+}
+.task-viewer-notes.placeholder {
+    font-style: italic;
+    color: var(--muted-text, #6b7280);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+@keyframes popupIn {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+/* Mobile adjustments for calendar modal */
+@media (max-width: 640px) {
+  .calendar-right {
+    top: 10%;  /* Move up to avoid overlapping key content */
+    right: 0;  /* Full edge alignment */
+    width: 100vw;  /* Full width for mobile */
+    height: 60vh;  /* Shorter height to fit screen */
+    border-radius: 0;  /* Remove rounded corners for edge-to-edge */
+    padding: 12px;  /* Reduced padding */
+  }
+  .calendar-modal {
+    height: 100%;  /* Fill available space */
+  }
+  .calendar-grid {
+    gap: 4px;  /* Tighter gaps */
+  }
+  .calendar-day {
+    min-height: 40px;  /* Smaller cells */
+    font-size: 0.8rem;  /* Smaller text */
+  }
+  .calendar-header h2 {
+    font-size: 1.1rem;  /* Smaller title */
+  }
+  .daily-tasks-modal {
+    width: 95vw;  /* Almost full width */
+    padding: 20px;  /* Reduced padding */
+  }
+}

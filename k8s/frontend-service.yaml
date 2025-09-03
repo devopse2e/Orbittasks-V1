@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: todo-app
+spec:
+  type: NodePort  # Or LoadBalancer for external IP in Docker Desktop
+  selector:
+    app: frontend
+  ports:
+    - port: 80  # Internal cluster port
+      targetPort: 80  # Container port (nginx)
+      nodePort: 30080  # Fixed external port
+
