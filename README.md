@@ -100,3 +100,5 @@ add this line
 The app will start on **http://orbittasks** and support **hot module reloading** for instant feedback.
 
 
+## License
+MIT License. See LICENSE file for details. 
