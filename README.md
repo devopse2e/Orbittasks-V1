@@ -101,4 +101,4 @@ The app will start on **http://orbittasks** and support **hot module reloading**
 
 
 ## License
-MIT License. See LICENSE file for details. 
+MIT License. See [LICENSE](LICENSE) for details.
