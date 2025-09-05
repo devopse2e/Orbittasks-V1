@@ -67,7 +67,7 @@ cd backend
 npm install
 
 # 4️⃣ Start the backend
-npm run dev
+npm start
 ```
 
 
