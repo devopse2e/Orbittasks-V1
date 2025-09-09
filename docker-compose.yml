@@ -3,7 +3,7 @@ version: '3.8'
 services:
   mongo:
     image: mongo:latest  # Compatible with DocumentDB (MongoDB 4.x API)
-    container_name: mongo-test
+    container_name: mongodb
     ports:
       - '27017:27017'  # Map to laptop for direct access if needed
     environment:
@@ -17,7 +17,7 @@ services:
 
   backend:
     build: ./backend  # Builds from your backend Dockerfile
-    container_name: backend-test
+    container_name: backend
     ports:
       - '3001:3001'
     environment:
@@ -35,7 +35,7 @@ services:
 
   frontend:
     build: ./frontend  # Builds from your frontend Dockerfile
-    container_name: frontend-test
+    container_name: frontend
     ports:
       - '80:80'  # Maps to Nginx port
     environment:

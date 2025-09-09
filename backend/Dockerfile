@@ -1,6 +1,6 @@
 
 # Stage 1: Builder (installs deps and prepares app; no mandatory build if not needed)
-FROM node:18-alpine AS build
+FROM node:20-alpine AS build
 
 # Install tzdata
 RUN apk update && apk add --no-cache tzdata
@@ -20,7 +20,7 @@ RUN npm cache clean --force && \
 COPY . .
 
 # Stage 2: Test (for running npm test in a container)
-#FROM node:18-alpine AS test
+#FROM node:20-alpine AS test
 
 #WORKDIR /app
 
@@ -31,7 +31,7 @@ COPY . .
 #CMD ["npm", "test", "--", "--ci"]
 
 # Stage 3: Production (lean runtime image)
-FROM node:18-alpine AS production
+FROM node:20-alpine AS production
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001

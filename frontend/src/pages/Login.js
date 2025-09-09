@@ -135,7 +135,7 @@ const Login = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
-              autocomplete="Enter your email"
+              autoComplete="Enter your email"
               required
             />
           </div>
@@ -147,7 +147,7 @@ const Login = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
-              autocomplete="current-password"
+              autoComplete="current-password"
               required
             />
           </div>
@@ -196,6 +196,7 @@ const Login = () => {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="New Password"
+                  autoComplete="New password"
                   required
                 />
               </div>
@@ -207,6 +208,7 @@ const Login = () => {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Confirm New Password"
+                  autoComplete="Confirm New password"
                   required
                 />
               </div>

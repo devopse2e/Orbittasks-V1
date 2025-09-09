@@ -11,7 +11,7 @@ workflow:
 variables:
   GIT_STRATEGY: fetch
   GIT_CLEAN_FLAGS: -ffdx -e !.gitignore
-  NODE_VERSION: "18"
+  NODE_VERSION: "20"
   NPM_CONFIG_CACHE: "/tmp/npm-cache"
   # Docker-specific global variables (non-sensitive)
   FRONTEND_IMAGE: $DOCKERHUB_USER/todo-app-frontend

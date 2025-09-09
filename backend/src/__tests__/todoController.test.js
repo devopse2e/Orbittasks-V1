@@ -1,183 +1,178 @@
-process.env.PORT = 3002;
+// src/__tests__/todoController.test.js
 
+process.env.PORT = 3002;
 const request = require('supertest');
 const express = require('express');
-const todoRoutes = require('../routes/todoRoutes');
-const Todo = require('../models/todoModel'); // Import for mocking
 
-// Enhanced mock for Todo model
-jest.mock('../models/todoModel', () => {
-  const mockQuery = {
-    sort: jest.fn().mockReturnThis(),
-    exec: jest.fn()
-  };
-  const mockTodo = jest.fn(function (data) {
-    const instance = { ...data, _id: 'mockId', completed: false };
-    instance.save = jest.fn().mockResolvedValue(instance);
-    return instance;
-  });
-  mockTodo.find = jest.fn().mockReturnValue({
-    ...mockQuery,
-    then: (resolve) => resolve([])
-  });
-  mockTodo.findByIdAndUpdate = jest.fn().mockResolvedValue(null);
-  mockTodo.findByIdAndDelete = jest.fn().mockResolvedValue(null);
-  return mockTodo;
-});
+jest.mock('../middleware/auth', () => ({
+  protect: (req, res, next) => {
+    req.user = { id: 'userId123' };
+    next();
+  },
+}));
+
+const todoRoutes = require('../routes/todoRoutes');
+const errorHandler = require('../middleware/errorHandler');
+const Todo = require('../models/todoModel');
+const User = require('../models/userModel');
+
+jest.mock('../models/todoModel');
+jest.mock('../models/userModel');
 
 const app = express();
 app.use(express.json());
 app.use('/api/todos', todoRoutes);
+app.use(errorHandler);
 
 describe('Todo Controller Tests', () => {
+  let mockTodo;
+
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Mock User.findById() with chainable select()
+    User.findById.mockReturnValue({
+      select: jest.fn().mockResolvedValue({ timezone: 'UTC' }),
+    });
+
+    // Define a consistent mock todo object
+    mockTodo = {
+      _id: 'todo1',
+      userId: 'userId123',
+      text: 'Test Todo',
+      completed: false,
+      notes: 'Sample notes',
+      dueDate: null,
+      priority: 'Medium',
+      save: jest.fn().mockResolvedValue(true),
+    };
+
+    // Mock Todo.find() with chainable sort() resolving to array
+    Todo.find.mockReturnValue({
+      sort: jest.fn().mockResolvedValue([mockTodo]),
+    });
+
+    // Mock Todo constructor for POST and recurrence creation
+    Todo.mockImplementation(function (data) {
+      const instance = {
+        ...data,
+        _id: data._id || 'newMockId',
+        save: jest.fn().mockResolvedValue(this),
+        toObject: function () { return { ...this }; },
+      };
+      return instance;
+    });
+
+    // Mock Todo.findOne() for PUT tests
+    Todo.findOne.mockResolvedValue(mockTodo);
+
+    // Mock Todo.findOneAndDelete() for DELETE tests
+    Todo.findOneAndDelete.mockResolvedValue({ _id: 'todo1' });
   });
 
   describe('GET /api/todos', () => {
-    test('should return empty array initially', async () => {
-      Todo.find.mockReturnValueOnce({
-        sort: jest.fn().mockReturnValueOnce({
-          then: (resolve) => resolve([])
-        })
-      });
-      const response = await request(app).get('/api/todos');
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual([]);
+    it('should return todos including the created mock todo', async () => {
+      const res = await request(app).get('/api/todos');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ _id: 'todo1', text: 'Test Todo' }),
+        ])
+      );
+      expect(Todo.find).toHaveBeenCalledWith({ userId: 'userId123' });
     });
 
-    test('should return all todos', async () => {
-      const mockTodos = [
-        {
-          _id: 'mockId',
-          text: 'Test todo',
-          completed: false,
-          notes: 'test notes',
-          dueDate: null,
-          priority: 'High'
-        }
-      ];
+    it('should handle errors and return 500', async () => {
       Todo.find.mockReturnValueOnce({
-        sort: jest.fn().mockReturnValueOnce({
-          then: (resolve) => resolve(mockTodos)
-        })
+        sort: jest.fn().mockRejectedValue(new Error('DB failure')),
       });
-      const response = await request(app).get('/api/todos');
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveLength(1);
-      expect(response.body[0].text).toBe('Test todo');
-      expect(response.body[0].priority).toBe('High');
+
+      const res = await request(app).get('/api/todos');
+      expect(res.status).toBe(500);
     });
   });
 
   describe('POST /api/todos', () => {
-    test('should create a new todo with full fields', async () => {
-      const newTodo = {
-        text: 'Test todo',
-        notes: 'Some notes',
-        dueDate: '2025-07-23T12:03:00.000Z',
-        priority: 'Medium'
+    it('should create a new recurring todo and calculate nextDueDate', async () => {
+      const newTodoData = {
+        text: 'New Task',
+        notes: 'Test notes',
+        dueDate: '2025-08-01T10:00:00.000Z',
+        priority: 'Medium',
+        category: 'Personal',
+        color: '#FFFFFF',
+        isRecurring: true,
+        recurrencePattern: 'daily',
+        recurrenceEndsAt: null,
+        recurrenceInterval: 1,
+        recurrenceCustomRule: '',
       };
 
-      Todo.mockReturnValueOnce({
-        ...newTodo,
-        _id: 'mockId',
-        completed: false,
-        save: jest.fn().mockResolvedValueOnce({
-          _id: 'mockId',
-          text: 'Test todo',
-          notes: 'Some notes',
-          dueDate: '2025-07-23T12:03:00.000Z',
-          priority: 'Medium',
-          completed: false
-        })
-      });
+      const res = await request(app).post('/api/todos').send(newTodoData);
 
-      const response = await request(app).post('/api/todos').send(newTodo);
-      expect(response.status).toBe(201);
-      expect(response.body.text).toBe('Test todo');
-      expect(response.body.notes).toBe('Some notes');
-      expect(response.body.priority).toBe('Medium');
-      expect(response.body.dueDate).toBe('2025-07-23T12:03:00.000Z');
-      expect(response.body._id).toBeDefined();
+      expect(res.status).toBe(201);
+      expect(res.body.text).toBe(newTodoData.text);
+      expect(res.body.isRecurring).toBe(true);
+      expect(res.body.nextDueDate).toBeDefined();
     });
 
-    test('should return 400 for invalid todo', async () => {
-      const response = await request(app).post('/api/todos').send({ text: '' });
-      expect(response.status).toBe(400);
-    });
-
-    test('should return 400 for missing text', async () => {
-      const response = await request(app).post('/api/todos').send({});
-      expect(response.status).toBe(400);
+    it('should return 400 for missing or empty text', async () => {
+      const invalids = [{}, { text: '' }];
+      for (const payload of invalids) {
+        const res = await request(app).post('/api/todos').send(payload);
+        expect(res.status).toBe(400);
+      }
     });
   });
 
   describe('PUT /api/todos/:id', () => {
-    test('should update existing todo', async () => {
-      const mockTodo = {
-        _id: 'mockId',
-        text: 'Test todo',
-        completed: false,
-        notes: 'Some notes',
-        dueDate: '2025-07-23T12:03:00.000Z',
-        priority: 'Medium'
-      };
+    it('should update todo and create next recurrence if completed', async () => {
+      const updateData = { completed: true };
 
-      Todo.findByIdAndUpdate.mockResolvedValueOnce({
+      // Mock the existing todo with recurrence properties
+      const recurringMockTodo = {
         ...mockTodo,
-        text: 'Updated todo',
-        completed: true,
-        notes: 'Updated notes',
-        dueDate: '2025-07-24T12:03:00.000Z',
-        priority: 'Low'
-      });
+        isRecurring: true,
+        recurrencePattern: 'daily',
+        recurrenceInterval: 1,
+        dueDate: new Date().toISOString(),
+        save: jest.fn().mockResolvedValue(true),
+      };
+      Todo.findOne.mockResolvedValueOnce(recurringMockTodo);
 
-      const response = await request(app)
-        .put('/api/todos/mockId')
-        .send({
-          text: 'Updated todo',
-          completed: true,
-          notes: 'Updated notes',
-          dueDate: '2025-07-24T12:03:00.000Z',
-          priority: 'Low'
-        });
-      expect(response.status).toBe(200);
-      expect(response.body.text).toBe('Updated todo');
-      expect(response.body.completed).toBe(true);
-      expect(response.body.notes).toBe('Updated notes');
-      expect(response.body.priority).toBe('Low');
+      const res = await request(app).put('/api/todos/todo1').send(updateData);
+
+      expect(res.status).toBe(200);
+      expect(recurringMockTodo.save).toHaveBeenCalled();
+      expect(Todo).toHaveBeenCalledTimes(1); // For the next recurrence instance
+      expect(res.body.completed).toBe(true);
     });
 
-    test('should return 404 for non-existent todo', async () => {
-      Todo.findByIdAndUpdate.mockResolvedValueOnce(null);
-      const response = await request(app).put('/api/todos/9999').send({ text: 'Updated todo' });
-      expect(response.status).toBe(404);
+    it('should return 404 if todo not found', async () => {
+      Todo.findOne.mockResolvedValue(null);
+
+      const res = await request(app).put('/api/todos/invalidid').send({ text: 'Update' });
+
+      expect(res.status).toBe(404);
     });
   });
 
   describe('DELETE /api/todos/:id', () => {
-    test('should delete existing todo', async () => {
-      Todo.findByIdAndDelete.mockResolvedValueOnce({ _id: 'mockId' });
+    it('should delete todo successfully', async () => {
+      Todo.findOneAndDelete.mockResolvedValue({ _id: 'todo1' });
 
-      const deleteResponse = await request(app).delete('/api/todos/mockId');
-      expect(deleteResponse.status).toBe(204);
+      const res = await request(app).delete('/api/todos/todo1');
 
-      Todo.find.mockReturnValueOnce({
-        sort: jest.fn().mockReturnValueOnce({
-          then: (resolve) => resolve([])
-        })
-      });
-      const getResponse = await request(app).get('/api/todos');
-      expect(getResponse.status).toBe(200);
-      expect(Array.isArray(getResponse.body)).toBe(true);
-      expect(getResponse.body).toHaveLength(0);
+      expect(res.status).toBe(204);
     });
 
-    test('should return 404 for non-existent todo', async () => {
-      Todo.findByIdAndDelete.mockResolvedValueOnce(null);
-      const response = await request(app).delete('/api/todos/9999');
-      expect(response.status).toBe(404);
+    it('should return 404 if todo does not exist', async () => {
+      Todo.findOneAndDelete.mockResolvedValue(null);
+
+      const res = await request(app).delete('/api/todos/nonexistentid');
+
+      expect(res.status).toBe(404);
     });
   });
 });

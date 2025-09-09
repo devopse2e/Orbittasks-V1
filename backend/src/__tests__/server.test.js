@@ -4,25 +4,59 @@ const request = require('supertest');
 const mongoose = require('mongoose');
 const app = require('../../server');
 
-// Comprehensive mock for mongoose to prevent real connections and schema errors
 jest.mock('mongoose', () => {
-  const mockSchema = jest.fn().mockImplementation(() => ({
-    pre: jest.fn().mockReturnThis(), // Simulate pre() method
-    post: jest.fn().mockReturnThis() // If needed for other hooks
-  }));
-  const mockModel = jest.fn().mockReturnValue({
-    find: jest.fn(),
-    findByIdAndUpdate: jest.fn(),
-    findByIdAndDelete: jest.fn(),
-    prototype: { save: jest.fn() }
+  const bcrypt = require('bcryptjs'); // or mock bcrypt as well if needed
+
+  const ObjectId = function () {};
+
+  function Schema(obj) {
+    // Add 'methods' as an empty object to attach instance methods
+    return {
+      obj,
+      methods: {},
+      statics: {},
+      _indexes: [],
+      index: jest.fn(function(fields, options) {
+        this._indexes.push({ fields, options });
+        return this;
+      }),
+      pre: jest.fn(function (hook, callback) {
+        return this; // to support chaining
+      }),
+      post: jest.fn(function (hook, callback) {
+        return this;
+      }),
+    };
+  }
+
+  Schema.Types = {
+    ObjectId,
+  };
+
+  const model = jest.fn(() => {
+    return {
+      find: jest.fn(),
+      findOne: jest.fn(),
+      findById: jest.fn(),
+      findByIdAndUpdate: jest.fn(),
+      findByIdAndDelete: jest.fn(),
+      save: jest.fn(),
+      // Attach methods or statics as needed
+    };
   });
+
   return {
-    connect: jest.fn().mockResolvedValue({}),
-    Schema: mockSchema,
-    model: mockModel,
-    connection: { readyState: 0, close: jest.fn() } // Mock for teardown
+    Schema,
+    Types: Schema.Types,
+    model,
+    connect: jest.fn(() => Promise.resolve()),
+    connection: {
+      readyState: 1,
+      close: jest.fn(),
+    },
   };
 });
+
 
 
 describe('Server Health Checks', () => {
